@@ -74,11 +74,12 @@ extern int got_signal;
 static char *Section;
 static char *Driver;
 static char *Port;
+static char *Lock;
 static speed_t Speed;
 static int Device = -1;
 
 
-#define LOCK "/var/lock/LCK..%s"
+#define DEFAULT_LOCK_PATH "/var/lock"
 
 
 /****************************************/
@@ -103,8 +104,8 @@ static pid_t drv_generic_serial_lock_port(const char *Port)
 	*p = '_';
     }
 
-    qprintf(lockfile, sizeof(lockfile), LOCK, port);
-    qprintf(tempfile, sizeof(tempfile), LOCK, "TMP.XXXXXX");
+    qprintf(lockfile, sizeof(lockfile), "%s", Lock);
+    qprintf(tempfile, sizeof(tempfile), "%s%s", Lock, "TMP.XXXXXX");
 
     free(port);
 
@@ -200,7 +201,7 @@ static pid_t drv_generic_serial_unlock_port(const char *Port)
 	*p = '_';
     }
 
-    qprintf(lockfile, sizeof(lockfile), LOCK, port);
+    qprintf(lockfile, sizeof(lockfile), "%s", Lock);
     unlink(lockfile);
     free(port);
 
@@ -232,6 +233,9 @@ int drv_generic_serial_open(const char *section, const char *driver, const unsig
     int i, fd;
     pid_t pid;
     struct termios portset;
+    char *LockPath;
+    char *portName;
+    int lock_len;
 
     Section = (char *) section;
     Driver = (char *) driver;
@@ -241,6 +245,23 @@ int drv_generic_serial_open(const char *section, const char *driver, const unsig
 	error("%s: no '%s.Port' entry from %s", Driver, section, cfg_source());
 	return -1;
     }
+
+    if (strncmp(Port, "/dev/", 5) == 0) {
+        portName = Port + 5;
+    } else {
+        portName = Port;
+    }
+    while (*portName == '/') portName++;
+
+    LockPath = cfg_get(section, "LockPath", NULL);
+    if (LockPath == NULL) {
+        LockPath = strdup(DEFAULT_LOCK_PATH);
+    }
+    lock_len = strlen(LockPath) + strlen("/LCK..") + strlen(portName) + 1;
+    Lock = malloc(lock_len);
+    qprintf(Lock, lock_len, "%s%s%s", LockPath, "/LCK..", portName);
+
+    free(LockPath);
 
     if (cfg_number(section, "Speed", 19200, 1200, 230400, &i) < 0)
 	return -1;
@@ -283,7 +304,7 @@ int drv_generic_serial_open(const char *section, const char *driver, const unsig
 
     if ((pid = drv_generic_serial_lock_port(Port)) != 0) {
 	if (pid == -1)
-	    error("%s: port %s could not be locked", Driver, Port);
+        error("%s: port %s could not be locked", Driver, Port);
 	else
 	    error("%s: port %s is locked by process %d", Driver, Port, pid);
 	return -1;
@@ -411,5 +432,6 @@ int drv_generic_serial_close(void)
     close(Device);
     drv_generic_serial_unlock_port(Port);
     free(Port);
+    free(Lock);
     return 0;
 }
