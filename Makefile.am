@@ -84,6 +84,7 @@ drv_EFN.c                     \
 drv_FutabaVFD.c               \
 drv_FW8888.c                  \
 drv_G15.c                     \
+drv_GLCD2Serial.c             \
 drv_GLCD2USB.c glcd2usb.h     \
 drv_HD44780.c                 \
 drv_Image.c                   \

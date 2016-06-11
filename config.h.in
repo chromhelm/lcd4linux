@@ -290,8 +290,7 @@
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Set to reflect version of ncurses */
@@ -518,6 +517,9 @@
 
 /* GD library */
 #undef WITH_GD
+
+/* GLCD2Serial driver */
+#undef WITH_GLCD2SERIAL
 
 /* GLCD2USB driver */
 #undef WITH_GLCD2USB

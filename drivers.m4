@@ -1,4 +1,4 @@
-dnl $Id$
+﻿dnl $Id$
 dnl $URL$
 
 
@@ -34,7 +34,7 @@ AC_ARG_WITH(
   [                        possible drivers are:]
   [                        ASTUSB, BeckmannEgle, BWCT, CrystalFontz, Curses, Cwlinux, D4D, DPF]
   [                        EA232graphic, EFN, FutabaVFD, FW8888, G15, GLCD2USB, HD44780, HD44780-I2C,]
-  [                        IRLCD, LCD2USB, LCDLinux, LEDMatrix, LCDTerm, LPH7508, LUIse,]
+  [                        IRLCD, LCD2USB, LCDLinux, LEDMatrix, LCDTerm, LPH7508, LUIse, GLCD2SERIAL,]
   [                        LW_ABP, M50530, MatrixOrbital, MatrixOrbitalGX, MilfordInstruments, MDM166A,]
   [                        Newhaven, Noritake, NULL, Pertelian, PHAnderson,]
   [                        PICGraphic, picoLCD, picoLCDGraphic, PNG, PPM, RouterBoard,]
@@ -73,6 +73,7 @@ for driver in $drivers; do
          FUTABAVFD="yes"
          FW8888="yes"
          G15="yes"
+         GLCD2SERIAL="yes"
          GLCD2USB="yes"
          HD44780="yes"
          HD44780_I2C="yes"
@@ -154,6 +155,9 @@ for driver in $drivers; do
          ;;
       G15)
          G15=$val
+         ;;
+      GLCD2SERIAL)
+         GLCD2SERIAL=$val
          ;;
       GLCD2USB)
          GLCD2USB=$val
@@ -428,6 +432,15 @@ if test "$G15" = "yes"; then
    else
       AC_MSG_WARN(usb.h not found: G15 driver disabled)
    fi
+fi
+
+if test "$GLCD2SERIAL" = "yes"; then
+   GRAPHIC="yes"
+   GPIO="yes"
+   DRIVERS="$DRIVERS drv_GLCD2Serial.o"
+   SERIAL="yes"
+   AC_DEFINE(WITH_GLCD2SERIAL,1,[GLCD2Serial driver])
+
 fi
 
 if test "$GLCD2USB" = "yes"; then
