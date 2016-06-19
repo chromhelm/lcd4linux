@@ -90,7 +90,6 @@ void property_load(const char *section, const char *name, const char *defval, PR
 
     /* pre-compile the expression */
     Compile(prop->expression, &prop->compiled);
-
 }
 
 
@@ -166,8 +165,8 @@ void property_free(PROPERTY * prop)
     }
 
     if (prop->compiled != NULL) {
-	free(prop->compiled);
-	prop->compiled = NULL;
+        DelTree(prop->compiled);
+        prop->compiled = NULL;
     }
 
     DelResult(&prop->result);

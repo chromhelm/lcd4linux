@@ -476,30 +476,35 @@ void hash_destroy(HASH * Hash)
 {
     int i;
 
-    if (Hash->Items) {
-
-	/* free all headers */
-	for (i = 0; i < Hash->nColumns; i++) {
-	    if (Hash->Columns[i].key)
-		free(Hash->Columns[i].key);
-	}
-
-	/* free header table */
-	free(Hash->Columns);
-
-	/* free all items */
-	for (i = 0; i < Hash->nItems; i++) {
-	    if (Hash->Items[i].key)
-		free(Hash->Items[i].key);
-	    if (Hash->Items[i].Slot)
-		free(Hash->Items[i].Slot);
-	}
-
-	/* free items table */
-	free(Hash->Items);
+    if(Hash->Columns != NULL) {
+        /* free all headers */
+        for (i = 0; i < Hash->nColumns; i++) {
+            if (Hash->Columns[i].key)
+                free(Hash->Columns[i].key);
+        }
+        /* free header table */
+        free(Hash->Columns);
     }
+    if (Hash->Items != NULL) {
+        /* free all items */
+        for (i = 0; i < Hash->nItems; i++) {
+            if (Hash->Items[i].key)
+                free(Hash->Items[i].key);
+            if (Hash->Items[i].Slot)
+            {
+		if(Hash->Items[i].Slot->value)
+		    free(Hash->Items[i].Slot->value);
+                free(Hash->Items[i].Slot);
+	    }
+        }
+
+        /* free items table */
+        free(Hash->Items);
+    }
+    if(Hash->delimiter != NULL) free(Hash->delimiter);
 
     Hash->sorted = 0;
     Hash->nItems = 0;
     Hash->Items = NULL;
+    Hash->delimiter = NULL;
 }

@@ -49,7 +49,7 @@
 
 static HASH NetDev;
 static FILE *Stream = NULL;
-static char *DELIMITER = " :|\t\n";
+const char *DELIMITER = " :|\t\n";
 
 static int parse_netdev(void)
 {

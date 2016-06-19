@@ -375,61 +375,70 @@ static int drv_GLCD2Serial_start(const char *section)
 {
     char *s;
     int contrast;
+    int ret = -1;
 
-    /* read display size from config */
-    s = cfg_get(section, "Size", NULL);
-    if (s == NULL || *s == '\0') {
-	error("%s: no '%s.Size' entry from %s", Name, section, cfg_source());
-	return -1;
-    }
+    do
+    {
+        /* read display size from config */
+        s = cfg_get(section, "Size", NULL);
+        if (s == NULL || *s == '\0') {
+            error("%s: no '%s.Size' entry from %s", Name, section, cfg_source());
+            break;
+        }
 
-    DROWS = -1;
-    DCOLS = -1;
-    if (sscanf(s, "%dx%d", &DCOLS, &DROWS) != 2 || DCOLS < 1 || DROWS < 1) {
-	error("%s: bad Size '%s' from %s", Name, s, cfg_source());
-	return -1;
-    }
+        DROWS = -1;
+        DCOLS = -1;
+        if (sscanf(s, "%dx%d", &DCOLS, &DROWS) != 2 || DCOLS < 1 || DROWS < 1) {
+            error("%s: bad Size '%s' from %s", Name, s, cfg_source());
+            break;
+        }
 
-    s = cfg_get(section, "Font", "6x8");
-    if (s == NULL || *s == '\0') {
-	error("%s: no '%s.Font' entry from %s", Name, section, cfg_source());
-	return -1;
-    }
+        free(s);
+        s = cfg_get(section, "Font", "6x8");
+        if (s == NULL || *s == '\0') {
+            error("%s: no '%s.Font' entry from %s", Name, section, cfg_source());
+            break;
+        }
 
-    XRES = -1;
-    YRES = -1;
-    if (sscanf(s, "%dx%d", &XRES, &YRES) != 2 || XRES < 1 || YRES < 1) {
-	error("%s: bad Font '%s' from %s", Name, s, cfg_source());
-	return -1;
-    }
+        XRES = -1;
+        YRES = -1;
+        if (sscanf(s, "%dx%d", &XRES, &YRES) != 2 || XRES < 1 || YRES < 1) {
+            error("%s: bad Font '%s' from %s", Name, s, cfg_source());
+            break;
+        }
 
-    /* Fixme: provider other fonts someday... */
-    if (XRES != 6 && YRES != 8) {
-	error("%s: bad Font '%s' from %s (only 6x8 at the moment)", Name, s, cfg_source());
-	return -1;
-    }
+        /* Fixme: provider other fonts someday... */
+        if (XRES != 6 && YRES != 8) {
+            error("%s: bad Font '%s' from %s (only 6x8 at the moment)", Name, s, cfg_source());
+            break;
+        }
 
-    /* you surely want to allocate a framebuffer or something... */
-    video_buffer = malloc(VIDEO_BUFFER_SIZE);
-    memset(video_buffer, 0, VIDEO_BUFFER_SIZE);
-    dirty_buffer = malloc(VIDEO_BUFFER_SIZE);
-    memset(dirty_buffer, 0, VIDEO_BUFFER_SIZE);
+        /* you surely want to allocate a framebuffer or something... */
+        video_buffer = malloc(VIDEO_BUFFER_SIZE);
+        memset(video_buffer, 0, VIDEO_BUFFER_SIZE);
+        dirty_buffer = malloc(VIDEO_BUFFER_SIZE);
+        memset(dirty_buffer, 0, VIDEO_BUFFER_SIZE);
 
-    serialBuffer = malloc(SERIAL_BUFFER_SIZE);
-    memset(serialBuffer, 0, SERIAL_BUFFER_SIZE);
+        serialBuffer = malloc(SERIAL_BUFFER_SIZE);
+        memset(serialBuffer, 0, SERIAL_BUFFER_SIZE);
 
-    /* open communication with the display */
-    if (drv_GLCD2Serial_open(section) < 0) {
-	return -1;
-    }
+        /* open communication with the display */
+        if (drv_GLCD2Serial_open(section) < 0) {
+            break;
+        }
 
-    Reset();
+        Reset();
 
-    if (cfg_number(section, "Contrast", 0, 0, 255, &contrast) > 0) {
-	drv_GLCD2Serial_contrast(contrast);
-    }
+        if (cfg_number(section, "Contrast", 0, 0, 255, &contrast) > 0) {
+            drv_GLCD2Serial_contrast(contrast);
+        }
 
-    return 0;
+        ret = 0;
+    }while(0);
+
+    if(s != NULL) free(s);
+
+    return ret;
 }
 
 
