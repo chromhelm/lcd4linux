@@ -676,7 +676,7 @@ if test "$PICOLCDGRAPHIC" = "yes"; then
    if test "$has_usb" = "true"; then
       TEXT="yes"
       GRAPHIC="yes"
-      KEYPAD="yes"      
+      KEYPAD="yes"
       GPIO="yes"
       SERIAL="yes"
       LIBUSB="yes"
@@ -907,7 +907,7 @@ fi
 
 # generic graphic driver
 if test "$GRAPHIC" = "yes"; then
-   DRIVERS="$DRIVERS drv_generic_graphic.o"
+   DRIVERS="$DRIVERS drv_generic_graphic.o widget_gtext.o"
    if test "$has_gd" = "true"; then
       DRIVERS="$DRIVERS widget_image.o widget_ttf.o"
       DRVLIBS="$DRVLIBS -lgd"
@@ -967,6 +967,6 @@ fi
 if test "$DRIVERS" = ""; then
    AC_MSG_ERROR([You should include at least one driver...])
 fi
-   
+
 AC_SUBST(DRIVERS)
 AC_SUBST(DRVLIBS)

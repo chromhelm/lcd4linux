@@ -120,9 +120,9 @@ am_lcd4linux_OBJECTS = lcd4linux.$(OBJEXT) cfg.$(OBJEXT) \
 	layout.$(OBJEXT) pid.$(OBJEXT) timer.$(OBJEXT) \
 	timer_group.$(OBJEXT) thread.$(OBJEXT) udelay.$(OBJEXT) \
 	qprintf.$(OBJEXT) rgb.$(OBJEXT) event.$(OBJEXT) \
-	widget.$(OBJEXT) widget_text.$(OBJEXT) widget_bar.$(OBJEXT) \
+	widget.$(OBJEXT) widget_bar.$(OBJEXT) widget_gpo.$(OBJEXT) \
 	widget_icon.$(OBJEXT) widget_keypad.$(OBJEXT) \
-	widget_timer.$(OBJEXT) widget_gpo.$(OBJEXT) plugin.$(OBJEXT) \
+	widget_text.$(OBJEXT) widget_timer.$(OBJEXT) plugin.$(OBJEXT) \
 	plugin_cfg.$(OBJEXT) plugin_math.$(OBJEXT) \
 	plugin_string.$(OBJEXT) plugin_test.$(OBJEXT) \
 	plugin_time.$(OBJEXT)
@@ -390,12 +390,12 @@ rgb.c         rgb.h           \
 event.c       event.h         \
                               \
 widget.c      widget.h        \
-widget_text.c widget_text.h   \
 widget_bar.c  widget_bar.h    \
+widget_gpo.c  widget_gpo.h    \
 widget_icon.c widget_icon.h   \
 widget_keypad.c widget_keypad.h \
+widget_text.c widget_text.h   \
 widget_timer.c widget_timer.h \
-widget_gpo.c  widget_gpo.h    \
                               \
 plugin.c      plugin.h        \
 plugin_cfg.c                  \
@@ -476,8 +476,9 @@ drv_X11.c                     \
                               \
 font_6x8.h                    \
 font_6x8_bold.h               \
+widget_gtext.c widget_gtext.h \
 widget_image.c widget_image.h \
-widget_ttf.c widget_ttf.h \
+widget_ttf.c widget_ttf.h     \
                               \
 lcd4linux_i2c.h               \
                               \
@@ -778,6 +779,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/widget.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/widget_bar.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/widget_gpo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/widget_gtext.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/widget_icon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/widget_image.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/widget_keypad.Po@am__quote@

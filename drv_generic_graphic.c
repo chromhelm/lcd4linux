@@ -65,11 +65,14 @@
 #include "layout.h"
 #include "widget.h"
 #include "property.h"
-#include "widget_text.h"
-#include "widget_icon.h"
+
 #include "widget_bar.h"
+#include "widget_gtext.h"
+#include "widget_icon.h"
 #include "widget_image.h"
+#include "widget_text.h"
 #include "widget_ttf.h"
+
 #include "rgb.h"
 #include "drv.h"
 #include "drv_generic.h"
@@ -241,68 +244,72 @@ static RGBA drv_generic_graphic_blend(const int row, const int col)
 /*** generic text handling            ***/
 /****************************************/
 
-static void drv_generic_graphic_render(const int layer, const int row, const int col, const RGBA fg, const RGBA bg,
-                                       const char *style, const char *txt)
+static void drv_generic_graphic_render_window(const int layer, const int row, const int col, const int higth, const int width, const RGBA fg, const RGBA bg,
+                       const char *style, const char *txt, const int text_x_pos)
 {
-	int c, r, x, y, len;
-	int bold;
+    int c, r, x, y, x_pos;
+    int bold;
 
-	/* sanity checks */
-	if (layer < 0 || layer >= LAYERS)
-	{
-		error("%s: layer %d out of bounds (0..%d)", Driver, layer, LAYERS - 1);
-		return;
+    /* sanity checks */
+    if (layer < 0 || layer >= LAYERS) {
+	error("%s: layer %d out of bounds (0..%d)", Driver, layer, LAYERS - 1);
+	return;
+    }
+
+    /* maybe grow layout framebuffer */
+    drv_generic_graphic_resizeFB(row + YRES, col + width);
+
+    r = row;
+    c = col;
+    x_pos = 0;
+
+    /* render text into layout FB */
+    bold = strstr(style, "bold") != NULL;
+    while (((x_pos + text_x_pos) < width) && ((c + x_pos + text_x_pos) < LCOLS))
+    {
+	unsigned char *chr;
+
+	/* magic char to toggle bold */
+	if (*txt == '\a') {
+	    bold ^= 1;
+	    txt++;
+	    continue;
 	}
 
-	len = strlen(txt);
+	if (bold) {
+	    chr = Font_6x8_bold[(int) *(unsigned char *) txt];
+	} else {
+	    chr = Font_6x8[(int) *(unsigned char *) txt];
+	}
 
-	/* maybe grow layout framebuffer */
-	drv_generic_graphic_resizeFB(row + YRES, col + XRES * len);
+	x = (x_pos >= 0) ? x_pos % XRES : ((-x_pos) % XRES);
 
-	r = row;
-	c = col;
-
-	/* render text into layout FB */
-	bold = 0;
-	while (*txt != '\0')
+	if((text_x_pos + x_pos) >= 0)
+	for (y = 0; y < YRES; y++)
 	{
-		unsigned char *chr;
+	    int mask = 1 << 6;
+	    mask >>= ((x * 6) / XRES) + 1;
 
-		/* magic char to toggle bold */
-		if (*txt == '\a')
-		{
-			bold ^= 1;
-			txt++;
-			continue;
-		}
-		if (bold || strstr(style, "bold") != NULL)
-		{
-			chr = Font_6x8_bold[(int) *(unsigned char *) txt];
-		}
+	    //expecting that the character '\n' are zeros
+	    {
+		if (chr[(y * 8) / YRES] & mask)
+		    drv_generic_graphic_FB[layer][(r + y) * LCOLS + c + text_x_pos + x_pos] = fg;
 		else
-		{
-			chr = Font_6x8[(int) *(unsigned char *) txt];
-		}
-
-		for (y = 0; y < YRES; y++)
-		{
-			for (x = 0; x < XRES; x++)
-			{
-				int mask = 1 << 6;
-				mask >>= ((x * 6) / (XRES)) + 1;
-				if (chr[(y * 8) / (YRES)] & mask)
-					drv_generic_graphic_FB[layer][(r + y) * LCOLS + c + x] = fg;
-				else
-					drv_generic_graphic_FB[layer][(r + y) * LCOLS + c + x] = bg;
-			}
-		}
-		c += XRES;
-		txt++;
+		    drv_generic_graphic_FB[layer][(r + y) * LCOLS + c + text_x_pos + x_pos] = bg;
+	    }
 	}
+	if((*txt != '\0') && (x == (XRES - 1))) txt++;
+	x_pos++;
+    }
 
-	/* flush area */
-	drv_generic_graphic_blit(row, col, YRES, XRES * len);
+    /* flush area */
+    drv_generic_graphic_blit(row, col, higth, width);
+}
 
+static void drv_generic_graphic_render(const int layer, const int row, const int col, const RGBA fg, const RGBA bg,
+                       const char *style, const char *txt)
+{
+    drv_generic_graphic_render_window(layer, row, col, YRES, strlen(txt) * XRES, fg, bg, style, txt, 0);
 }
 
 
@@ -384,16 +391,54 @@ int drv_generic_graphic_greet(const char *msg1, const char *msg2)
 
 int drv_generic_graphic_draw(WIDGET * W)
 {
-	WIDGET_TEXT *Text = W->data;
-	RGBA fg, bg;
+    WIDGET_TEXT *Text;
+    WIDGET_GTEXT *GText;
+    RGBA fg, bg;
 
-	fg = W->fg_valid ? W->fg_color : FG_COL;
-	bg = W->bg_valid ? W->bg_color : BG_COL;
+    fg = W->fg_valid ? W->fg_color : FG_COL;
+    bg = W->bg_valid ? W->bg_color : BG_COL;
 
+    if(strcmp(W->class->name, "gtext") == 0)
+    {
+	 GText = W->data;
+	 drv_generic_graphic_render_window(W->layer,
+	                                   W->row,
+	                                   W->col,
+	                                   YRES,
+	                                   GText->value_x_off,
+	                                   fg, bg,
+	                                   P2S(&GText->style),
+	                                   P2S(&GText->prefix), 0);
+
+	 drv_generic_graphic_render_window(W->layer,
+	                                   W->row,
+	                                   W->col + GText->value_x_off,
+	                                   YRES,
+	                                   GText->postfix_x_off - GText->value_x_off,
+	                                   fg, bg,
+	                                   P2S(&GText->style),
+	                                   GText->string,
+	                                   GText->value_x_skip);
+
+	 drv_generic_graphic_render_window(W->layer,
+	                                   W->row,
+	                                   W->col + GText->postfix_x_off,
+	                                   YRES,
+	                                   GText->width - GText->postfix_x_off,
+	                                   fg, bg,
+	                                   P2S(&GText->style),
+	                                   P2S(&GText->postfix),
+	                                   0);
+    }
+    else
+    {
+	Text = W->data;
 	drv_generic_graphic_render(W->layer, YRES * W->row, XRES * W->col, fg, bg, P2S(&Text->style), Text->buffer);
+    }
 
-	return 0;
+    return 0;
 }
+
 
 
 /****************************************/
@@ -734,6 +779,11 @@ int drv_generic_graphic_init(const char *section, const char *driver)
 	wc.draw = drv_generic_graphic_draw;
 	widget_register(&wc);
 
+	/* register gtext widget */
+	wc = Widget_GText;
+	wc.draw = drv_generic_graphic_draw;
+	widget_register(&wc);
+
 	/* register icon widget */
 	wc = Widget_Icon;
 	wc.draw = drv_generic_graphic_icon_draw;
@@ -749,6 +799,7 @@ int drv_generic_graphic_init(const char *section, const char *driver)
 	wc = Widget_Image;
 	wc.draw = drv_generic_graphic_image_draw;
 	widget_register(&wc);
+
 	wc = Widget_Truetype;
 	wc.draw = drv_generic_graphic_image_draw;
 	widget_register(&wc);

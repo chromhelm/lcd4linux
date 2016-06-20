@@ -42,12 +42,12 @@ rgb.c         rgb.h           \
 event.c       event.h         \
                               \
 widget.c      widget.h        \
-widget_text.c widget_text.h   \
 widget_bar.c  widget_bar.h    \
+widget_gpo.c  widget_gpo.h    \
 widget_icon.c widget_icon.h   \
 widget_keypad.c widget_keypad.h \
+widget_text.c widget_text.h   \
 widget_timer.c widget_timer.h \
-widget_gpo.c  widget_gpo.h    \
                               \
 plugin.c      plugin.h        \
 plugin_cfg.c                  \
@@ -128,8 +128,9 @@ drv_X11.c                     \
                               \
 font_6x8.h                    \
 font_6x8_bold.h               \
+widget_gtext.c widget_gtext.h \
 widget_image.c widget_image.h \
-widget_ttf.c widget_ttf.h \
+widget_ttf.c widget_ttf.h     \
                               \
 lcd4linux_i2c.h               \
                               \
