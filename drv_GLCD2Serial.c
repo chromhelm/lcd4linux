@@ -157,10 +157,12 @@ static void drv_GLCD2Serial_send(char *data, const unsigned int len)
 /* for graphic displays only */
 static void drv_GLCD2Serial_blit(const int row, const int col, const int height, const int width)
 {
+	int r, c;
+	
     SendBytesCount = 0;
     /* update offscreen buffer */
-    for (int r = row; r < row + height; r++) {
-        for (int c = col; c < col + width; c++) {
+    for (r = row; r < row + height; r++) {
+        for (c = col; c < col + width; c++) {
 
             int pos;
             unsigned char mask;
@@ -292,10 +294,12 @@ static int SendLine(int pos)
 
 static int PackMesseg(unsigned char* buffer, int length)
 {
+	int i;
+	
     memmove(buffer+1,buffer, length++);
     buffer[0] = 0xAA;                   //Frame start
     
-    for(int i = 1; i < length; i++)     // do suptiyution
+    for(i = 1; i < length; i++)     // do suptiyution
     {
         if(buffer[i] == 0xAA ||
            buffer[i] == 0xCC ||
@@ -313,7 +317,9 @@ static int PackMesseg(unsigned char* buffer, int length)
 
 static int RemoveSubtitution(unsigned char *buffer, int length)
 {
-    for(int i = 0; i < length; i++)
+	int i;
+	
+    for(i = 0; i < length; i++)
     {
         if((unsigned char)buffer[i] == 0xFF)
         {
