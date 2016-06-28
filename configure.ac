@@ -87,6 +87,9 @@ AC_CHECK_HEADERS(serdisplib/serdisp.h, [has_serdisplib="true"], [has_serdisplib=
 # check for st2205 libs
 AC_CHECK_HEADERS(st2205.h, [has_st2205="true"], [has_st2205="false"])
 
+# check for wiringPi libs
+AC_CHECK_HEADERS(wiringPi.h, [has_wiringPi="true"], [has_wiringPi="false"])
+
 # check for vncserver libs
 AC_CHECK_HEADERS(rfb/rfb.h, [has_vncserverlib="true"], [has_vncserverlib="false"])
 

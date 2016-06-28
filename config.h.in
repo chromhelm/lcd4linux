@@ -271,6 +271,9 @@
 /* Define to 1 if you have the <vfork.h> header file. */
 #undef HAVE_VFORK_H
 
+/* Define to 1 if you have the <wiringPi.h> header file. */
+#undef HAVE_WIRINGPI_H
+
 /* Define to 1 if `fork' works. */
 #undef HAVE_WORKING_FORK
 
@@ -290,7 +293,8 @@
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
-/* Define to the sub-directory where libtool stores uninstalled libraries. */
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
 #undef LT_OBJDIR
 
 /* Set to reflect version of ncurses */
@@ -628,6 +632,9 @@
 
 /* st2205 driver */
 #undef WITH_ST2205
+
+/* st7529_pi driver */
+#undef WITH_ST7529_PI
 
 /* T6963 driver */
 #undef WITH_T6963

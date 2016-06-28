@@ -414,11 +414,17 @@ int main(int argc, char *argv[])
     debug("leaving main loop");
 
     drv_quit(quiet);
+    debug("drv_quit: success");
     pid_exit(pidfile);
+    debug("pid_exit: success");
     cfg_exit();
+    debug("cfg_exit: success");
     plugin_exit();
+    debug("plugin_exit: success");
     timer_exit_group();
+    debug("timer_exit_group: success");
     timer_exit();
+    debug("timer_exit: success");
 
     if (got_signal == SIGHUP) {
 	long fd;

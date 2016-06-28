@@ -113,6 +113,7 @@ drv_RouterBoard.c             \
 drv_Sample.c                  \
 drv_SamsungSPF.c              \
 drv_st2205.c                  \
+drv_st7529_pi.c               \
 drv_serdisplib.c              \
 drv_ShuttleVFD.c              \
 drv_SimpleLCD.c               \
@@ -146,7 +147,7 @@ plugin_fifo.c                 \
 plugin_file.c                 \
 plugin_gps.c                  \
 plugin_hddtemp.c              \
-plugin_huawei.c		      \
+plugin_huawei.c		          \
 plugin_i2c_sensors.c          \
 plugin_iconv.c                \
 plugin_imon.c                 \
@@ -170,7 +171,7 @@ plugin_seti.c                 \
 plugin_statfs.c               \
 plugin_uname.c                \
 plugin_uptime.c               \
-plugin_w1retap.c	      \
+plugin_w1retap.c	          \
 plugin_wireless.c             \
 plugin_xmms.c
 

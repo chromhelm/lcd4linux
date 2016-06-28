@@ -1,4 +1,4 @@
-﻿dnl $Id$
+dnl $Id$
 dnl $URL$
 
 
@@ -38,8 +38,8 @@ AC_ARG_WITH(
   [                        LW_ABP, M50530, MatrixOrbital, MatrixOrbitalGX, MilfordInstruments, MDM166A,]
   [                        Newhaven, Noritake, NULL, Pertelian, PHAnderson,]
   [                        PICGraphic, picoLCD, picoLCDGraphic, PNG, PPM, RouterBoard,]
-  [                        Sample, SamsungSPF, serdisplib, ShuttleVFD, SimpleLCD, st2205, T6963,]
-  [                        TeakLCM, Trefon, ULA200, USBHUB, USBLCD, VNC, WincorNixdorf, X11],
+  [                        Sample, SamsungSPF, serdisplib, ShuttleVFD, SimpleLCD, st2205, st7529_pi,]
+  [                        T6963, TeakLCM, Trefon, ULA200, USBHUB, USBLCD, VNC, WincorNixdorf, X11],
   drivers=$withval,
   drivers=all
 )
@@ -104,6 +104,7 @@ for driver in $drivers; do
          SAMPLE="yes"
          SAMSUNGSPF="yes"
          ST2205="yes"
+         ST7529_PI="yes"
 	 SERDISPLIB="yes"
 	 SHUTTLEVFD="yes"
          SIMPLELCD="yes"
@@ -257,6 +258,9 @@ for driver in $drivers; do
          ;;
       st2205)
          ST2205=$val
+         ;;
+      st7529_pi)
+         ST7529_PI=$val
          ;;
       T6963)
          T6963=$val
@@ -787,6 +791,17 @@ if test "$ST2205" = "yes"; then
       AC_DEFINE(WITH_ST2205,1,[st2205 driver])
    else
       AC_MSG_WARN(st2205.h not found: st2205 driver disabled)
+   fi
+fi
+
+if test "$ST7529_PI" = "yes"; then
+   if test "$has_wiringPi" = "true"; then
+      GRAPHIC="yes"
+      DRIVERS="$DRIVERS drv_st7529_pi.o"
+      DRVLIBS="$DRVLIBS -lwiringPi"
+      AC_DEFINE(WITH_ST7529_PI,1,[st7529_pi driver])
+   else
+      AC_MSG_WARN(wiringPi.h not found: st7529_pi driver disabled)
    fi
 fi
 

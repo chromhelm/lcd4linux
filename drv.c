@@ -89,6 +89,7 @@ extern DRIVER drv_RouterBoard;
 extern DRIVER drv_Sample;
 extern DRIVER drv_SamsungSPF;
 extern DRIVER drv_st2205;
+extern DRIVER drv_st7529_pi;
 extern DRIVER drv_serdisplib;
 extern DRIVER drv_ShuttleVFD;
 extern DRIVER drv_SimpleLCD;
@@ -236,6 +237,9 @@ DRIVER *Driver[] = {
 #endif
 #ifdef WITH_ST2205
     &drv_st2205,
+#endif
+#ifdef WITH_ST7529_PI
+    &drv_st7529_pi,
 #endif
 #ifdef WITH_SHUTTLEVFD
     &drv_ShuttleVFD,
