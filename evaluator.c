@@ -453,13 +453,10 @@ int SetVariableString(const char *name, const char *value)
 {
     RESULT result = { 0, 0, 0, NULL };
     RESULT *rp = &result;
-    int ret;
 
     SetResult(&rp, R_STRING, value);
 
-    ret = SetVariable(name, rp);
-    free(result.string);
-    return ret;
+    return SetVariable(name, rp);
 }
 
 
@@ -1463,8 +1460,6 @@ void DelTree(void *tree)
     for (i = 0; i < Tree->Children; i++) {
 	DelTree(Tree->Child[i]);
     }
-    if(Tree->Child != NULL)
-        free(Tree->Child);
 
     if (Tree->Result)
 	FreeResult(Tree->Result);

@@ -501,10 +501,8 @@ void hash_destroy(HASH * Hash)
         /* free items table */
         free(Hash->Items);
     }
-    if(Hash->delimiter != NULL) free(Hash->delimiter);
 
     Hash->sorted = 0;
     Hash->nItems = 0;
     Hash->Items = NULL;
-    Hash->delimiter = NULL;
 }

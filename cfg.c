@@ -448,7 +448,6 @@ int cfg_number(const char *section, const char *key, const int defval, const int
 	return -1;
     }
 
-    free(expression);
     return 1;
 }
 
