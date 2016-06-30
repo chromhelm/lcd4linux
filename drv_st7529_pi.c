@@ -56,7 +56,7 @@
 /* graphic display? */
 #include "drv_generic_graphic.h"
 
-static const char Name[] = "st7529_pi";
+static char Name[] = "st7529_pi";
 
 static const uint8_t GreySet1[16] =
 { 0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30 };
@@ -64,121 +64,69 @@ static const uint8_t GreySet1[16] =
 static const uint8_t GreySet2[16] =
 { 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31 };
 
-#define PIN_NCS 6
-#define PIN_CLK 10
-#define PIN_SI 11
-#define PIN_NRST 5
 
-#define SW_PIXEL_ON 0x1F
-#define SW_PIXEL_OFF 0x00
+#define SW_PIXEL_ON 0x00
+#define SW_PIXEL_OFF 0x1F
 
 #define PIXEL_PER_BYTE 1
 #define BYTES_PER_ROW (DCOLS / PIXEL_PER_BYTE)
-//#define SERIAL_BUFFER_SIZE ((5 + BYTES_PER_ROW * DROWS) * 2 + 2)
 #define VIDEO_BUFFER_SIZE (DROWS * BYTES_PER_ROW)
 
-#define DEFAULT_CONTRAST (0x8c << 1)  // 0x118
+#define DEFAULT_CONTRAST 0x118
 
 static unsigned char* video_buffer = NULL;
+static int clockHighDelay;
+static int clockLowDelay;
+static int pinRST;
+static int pinMOSI;
+static int pinCS;
+static int pinCLK;
 
 static int drv_st7529_pi_contrast(int contrast);
 
-static void display_write(bool command, uint8_t data);
-static int display_initPins();
-static void display_reset(void);
-static void display_SetPosXY(uint8_t y, uint8_t x);
 //Helper funktions
-static inline int GetPosFromCordiats(int row, int column)
+static int GetPosFromCordiats(int row, int column)
 {
     return (row * BYTES_PER_ROW) + column / PIXEL_PER_BYTE;
+}
+
+static void delayLoop(uint16_t loops)
+{
+    uint16_t i;
+    for(i = 0; i < loops; i++)
+    {
+            asm("nop;");
+    }
 }
 
 /****************************************/
 /***  hardware dependant functions    ***/
 /****************************************/
-/* for graphic displays only */
-static void drv_st7529_pi_blit(const int row, const int col, const int height, const int width)
-{
-    uint16_t pos, pos_1, pos_2;
-    bool write = false;
-    uint8_t original[3], r, c, w;
 
-    w = width - (col % 3);
-    for(r = row; r <  row + height; r++)
+static void display_write(bool command, uint8_t data)
+{
+    uint8_t mask = 0x80;
+
+    digitalWrite(pinCS, LOW);
+
+    digitalWrite(pinCLK, LOW);
+    digitalWrite(pinMOSI, command ? LOW : HIGH);
+    delayLoop(clockLowDelay);
+    digitalWrite(pinCLK, HIGH);
+    command <<= 1;                  // just to keep timing equal
+    delayLoop(clockHighDelay);
+
+    while(mask)
     {
-        write = false;
-        for(c = col - (col % 3); c < col + w; c+=3)
-        {
-            pos = GetPosFromCordiats(r, c);
-            pos_1 = pos + 1;
-            pos_2 = pos + 2;
-            original[0] = video_buffer[pos];
-            original[1] = video_buffer[pos_1];
-            original[2] = video_buffer[pos_2];
-
-            video_buffer[pos] = drv_generic_graphic_black(r, c);
-            video_buffer[pos_1] = drv_generic_graphic_black(r, c + 1);
-            video_buffer[pos_2] = drv_generic_graphic_black(r, c + 2);
-
-            if (video_buffer[pos] != original[0]
-                    || video_buffer[pos_1] != original[1]
-                    || video_buffer[pos_2] != original[2])
-            {
-                if(write == false)
-                {
-                    display_SetPosXY(r, c);
-
-                    display_write(true, 0x5C);
-
-                    write = true;
-                }
-                display_write(false, ((video_buffer[pos] ? SW_PIXEL_ON << 3 : SW_PIXEL_OFF << 3))
-                              | ((video_buffer[pos_1] ? SW_PIXEL_ON >> 2: SW_PIXEL_OFF >> 2)));
-                display_write(false, ((video_buffer[pos_1] ? SW_PIXEL_ON << 6: SW_PIXEL_OFF << 6))
-                              | ((video_buffer[pos_2] ? SW_PIXEL_ON : SW_PIXEL_OFF)));
-            }
-            else
-            {
-                write = false;
-            }
-        }
+        digitalWrite(pinCLK, LOW);
+        digitalWrite(pinMOSI, data & mask ? HIGH : LOW);
+        delayLoop(clockLowDelay);
+        digitalWrite(pinCLK, HIGH);
+        mask >>= 1;
+        delayLoop(clockHighDelay);
     }
-}
 
-static int display_initPins()
-{
-    if (wiringPiSetup () == -1)
-        return 1;
-    
-    pinMode(PIN_NCS, OUTPUT);
-    digitalWrite(PIN_NCS, HIGH);
-    
-    pinMode(PIN_CLK, OUTPUT);
-    digitalWrite(PIN_CLK, HIGH);
-
-    pinMode(PIN_NRST, OUTPUT);
-    digitalWrite(PIN_NRST, HIGH);
-    
-    pinMode(PIN_SI, OUTPUT);
-    return 0;
-}
-
-static int display_freePins()
-{
-    //if (wiringPiSetup () == -1)
-   //     return 1;
-
-    /*pinMode(PIN_NCS, INPUT);
-    digitalWrite(PIN_NCS, LOW);
-
-    pinMode(PIN_CLK, INPUT);
-    digitalWrite(PIN_CLK, LOW);
-
-    pinMode(PIN_SI, INPUT);
-    digitalWrite(PIN_SI, LOW);
-
-    pinMode(PIN_NRST, INPUT);*/
-    return 0;
+    digitalWrite(pinCS, HIGH);
 }
 
 static void display_SetPos(uint8_t y, uint8_t x, uint8_t h, uint8_t w)
@@ -225,20 +173,24 @@ static void display_Fill(uint8_t value)
     
   display_SetPosNull();
   display_write(true, 0x5C);  
-  for(i = 0; i < DROWS * DCOLS; i++)
+  for(i = 0; i < DROWS * DCOLS; i+=3)
   {
-    display_write(false, value);
+      display_write(false, (value << 3) | value >> 2);
+      display_write(false, (value << 6) | value);
   }
 }
 
-static void display_reset()
+static void display_Init()
 {
     int i;
-    
-    digitalWrite(PIN_NRST, LOW);
-    udelay(10);
-    digitalWrite(PIN_NRST, HIGH);
-    udelay(10);
+
+    if(pinRST >= 0)
+    {
+        digitalWrite(pinRST, LOW);
+        udelay(10);
+        digitalWrite(pinRST, HIGH);
+        udelay(10);
+    }
 
     display_EXTCommands(false);
  
@@ -248,7 +200,7 @@ static void display_reset()
  
     display_write(true, 0x20);                                 // Power Control Set
     display_write(false, 0x08);                                // Booster Must Be On First
-    udelay(1000);                                          // Delay 1 ms.
+    udelay(1000);                                              // Delay 1 ms.
   
     display_write(true, 0x20);                                 // Power Control Set
     display_write(false, 0x0B);                                // Booster, Regulator, Follower ON
@@ -298,28 +250,90 @@ static void display_reset()
     display_Fill(SW_PIXEL_OFF);
 }
 
-static void display_write(bool command, uint8_t data)
+
+static int drv_st7529_pi_InitPins()
 {
-    uint16_t data9bit, mask;
-    
-    data9bit = data | (command ? 0x0000 : 0x0100);
-    mask = 0x0100;
-    
-    digitalWrite(PIN_NCS, LOW);
-    ndelay(1);
-    do
-    {        
-        digitalWrite(PIN_CLK, LOW);
-        digitalWrite(PIN_SI, (data9bit & mask) ? HIGH : LOW);
-        mask >>= 1;
-        //TIMEING
-        //ndelay(1);
-        digitalWrite(PIN_CLK, HIGH);
-        ndelay(2);
-    }while(mask);
-    digitalWrite(PIN_NCS, HIGH);
-    //debug("write : %i", data9bit);
+    if (wiringPiSetup () == -1)
+        return 1;
+
+    pinMode(pinCS, OUTPUT);
+    digitalWrite(pinCS, HIGH);
+
+    pinMode(pinCLK, OUTPUT);
+    digitalWrite(pinCLK, HIGH);
+
+    pinMode(pinMOSI, OUTPUT);
+
+    if(pinRST >= 0)
+    {
+        pinMode(pinRST, OUTPUT);
+        digitalWrite(pinRST, HIGH);
+    }
+    return 0;
 }
+
+static int drv_st7529_pi_FreePins()
+{
+    pinMode(pinCS, INPUT);
+    pinMode(pinCLK, INPUT);
+    pinMode(pinMOSI, INPUT);
+
+    if(pinRST >= 0)
+    {
+        pinMode(pinRST, INPUT);
+    }
+
+    return 0;
+}
+
+static void drv_st7529_pi_blit(const int row, const int col, const int height, const int width)
+{
+    uint16_t pos, pos_1, pos_2;
+    bool write = false;
+    uint8_t original[3], r, c, w;
+
+    w = width - (col % 3);
+    for(r = row; r <  row + height; r++)
+    {
+        write = false;
+        for(c = col - (col % 3); c < col + w; c+=3)
+        {
+            pos = GetPosFromCordiats(r, c);
+            pos_1 = pos + 1;
+            pos_2 = pos + 2;
+            original[0] = video_buffer[pos];
+            original[1] = video_buffer[pos_1];
+            original[2] = video_buffer[pos_2];
+
+            video_buffer[pos] = drv_generic_graphic_black(r, c);
+            video_buffer[pos_1] = drv_generic_graphic_black(r, c + 1);
+            video_buffer[pos_2] = drv_generic_graphic_black(r, c + 2);
+
+            if (video_buffer[pos] != original[0]
+                    || video_buffer[pos_1] != original[1]
+                    || video_buffer[pos_2] != original[2])
+            {
+                if(write == false)
+                {
+                    display_SetPosXY(r, c);
+
+                    display_write(true, 0x5C);
+
+                    write = true;
+                }
+                display_write(false, ((video_buffer[pos] ? SW_PIXEL_ON << 3 : SW_PIXEL_OFF << 3))
+                              | ((video_buffer[pos_1] ? SW_PIXEL_ON >> 2: SW_PIXEL_OFF >> 2)));
+                display_write(false, ((video_buffer[pos_1] ? SW_PIXEL_ON << 6: SW_PIXEL_OFF << 6))
+                              | ((video_buffer[pos_2] ? SW_PIXEL_ON : SW_PIXEL_OFF)));
+            }
+            else
+            {
+                write = false;
+            }
+        }
+    }
+}
+
 /* example function used in a plugin */
 static int drv_st7529_pi_contrast(int contrast)
 {
@@ -379,13 +393,42 @@ static int drv_st7529_pi_start(const char *section)
             break;
         }
 
+        /* timing */
+        cfg_number(section, "Timing.High", 100, 0, 10000, &clockHighDelay);
+        cfg_number(section, "Timing.Low", 100, 0, 10000, &clockLowDelay);        
+
+        if(cfg_number(section, "Pin.CLK", -1, 0, 40, &pinCLK) != 1
+           || cfg_number(section, "Pin.CS", -1, 0, 40, &pinCS) != 1
+           || cfg_number(section, "Pin.MOSI", -1, 0, 40, &pinMOSI) != 1
+           || cfg_number(section, "Pin.RST", -1, 0, 40, &pinRST) == -1)
+        {
+            break;
+        }
+
+        if(pinCLK == -1
+                || pinCS == -1
+                || pinMOSI == -1)
+        {
+            error("%s: Not all necessery pins are defined", Name);
+            break;
+        }
+
+        if(pinCLK == pinCS || pinCLK == pinMOSI || pinCLK == pinRST
+                || pinCS == pinMOSI || pinCS == pinRST
+                || pinMOSI == pinRST)
+        {
+            error("%s: Pin functions can not share the same pysikal pin", Name);
+            break;
+        }
+
+
         /* you surely want to allocate a framebuffer or something... */
         video_buffer = malloc(VIDEO_BUFFER_SIZE);
         memset(video_buffer, 0, VIDEO_BUFFER_SIZE);
         
-        display_initPins();
+        drv_st7529_pi_InitPins();
 
-        display_reset();
+        display_Init();
 
         if (cfg_number(section, "Contrast", 0, 0, 511, &contrast) > 0) {
             drv_st7529_pi_contrast(contrast);
@@ -398,7 +441,6 @@ static int drv_st7529_pi_start(const char *section)
 
     return ret;
 }
-
 
 /****************************************/
 /***            plugins               ***/
@@ -417,12 +459,10 @@ static void plugin_contrast(RESULT * result, RESULT * arg1)
 /***        widget callbacks          ***/
 /****************************************/
 
-
 /* using drv_generic_text_draw(W) */
 /* using drv_generic_text_icon_draw(W) */
 /* using drv_generic_text_bar_draw(W) */
 /* using drv_generic_gpio_draw(W) */
-
 
 /****************************************/
 /***        exported functions        ***/
@@ -466,6 +506,8 @@ int drv_st7529_pi_init(const char *section, const int quiet)
     /* register plugins */
     AddFunction("LCD::contrast", 1, plugin_contrast);
 
+    udelay_init();
+
     return 0;
 }
 
@@ -487,7 +529,7 @@ int drv_st7529_pi_quit(const int quiet)
 
     debug("closing connection");
     /* free resorces */
-    display_freePins();
+    drv_st7529_pi_FreePins();
 
     if(video_buffer != NULL)
     {

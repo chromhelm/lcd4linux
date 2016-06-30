@@ -165,7 +165,7 @@ void property_free(PROPERTY * prop)
     }
 
     if (prop->compiled != NULL) {
-        DelTree(prop->compiled);
+        free(prop->compiled);
         prop->compiled = NULL;
     }
 

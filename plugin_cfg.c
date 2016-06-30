@@ -79,7 +79,6 @@ static void load_variables(void)
 		    error("error evaluating variable '%s' from %s", list, cfg_source());
 		}
 		DelTree(tree);
-                free(expression);
 	    }
 	}
 	l = p ? p + 1 : NULL;
